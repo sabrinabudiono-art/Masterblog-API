@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -10,8 +10,24 @@ POSTS = [
 ]
 
 
-@app.route('/api/posts', methods=['GET'])
+@app.route('/api/posts', methods=['GET', 'POST'])
 def get_posts():
+    if request.method == 'POST':
+        # Add the code that handles adding a new blog
+        new_post = request.get_json()
+        # Set a new id
+        if POSTS:
+            new_id = max(post['id'] for post in POSTS) + 1
+            new_post['id'] = new_id
+        else:
+            new_post['id'] = 1
+
+        # Add new post to POSTS
+        POSTS.append(new_post)
+
+        # Return the new post to the client
+        return jsonify(new_post), 201
+
     return jsonify(POSTS)
 
 
