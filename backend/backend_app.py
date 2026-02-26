@@ -11,10 +11,14 @@ POSTS = [
 
 
 @app.route('/api/posts', methods=['GET', 'POST'])
-def get_posts():
+def handle_posts():
     if request.method == 'POST':
         # Add the code that handles adding a new blog
         new_post = request.get_json()
+        if 'title' not in new_post:
+            return jsonify("Title is missing"), 400
+        elif 'content' not in new_post:
+            return jsonify("Content is missing"), 400
         # Set a new id
         if POSTS:
             new_id = max(post['id'] for post in POSTS) + 1
