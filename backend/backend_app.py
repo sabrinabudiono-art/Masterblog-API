@@ -10,6 +10,10 @@ POSTS = [
 ]
 
 
+def find_post_by_id(post_id):
+    return next((post for post in POSTS if post['id'] == post_id), None)
+
+
 @app.route('/api/posts', methods=['GET', 'POST'])
 def handle_posts():
     if request.method == 'POST':
@@ -35,38 +39,34 @@ def handle_posts():
     return jsonify(POSTS)
 
 
-@app.route('/api/posts/<int:id>', methods=['DELETE'])
-def delete(id):
+@app.route('/api/posts/<int:post_id>', methods=['DELETE'])
+def delete(post_id):
     global POSTS
-    posts = [post for post in POSTS if post['id'] != id]
-    if len(posts) == len(POSTS):
+
+    post = find_post_by_id(post_id)
+    if post is None:
         return '', 404
-    POSTS = posts
-    successfully_deleted = {"message": f"Post with id {id} has been deleted successfully."}
+    POSTS.remove(post)
+
+    successfully_deleted = {"message": f"Post with id {post_id} has been deleted successfully."}
     return jsonify(successfully_deleted), 200
 
 
-@app.route('/api/posts/<int:id>', methods=['PUT'])
-def update(id):
+@app.route('/api/posts/<int:post_id>', methods=['PUT'])
+def update(post_id):
     global POSTS
-    updated_post = next((post for post in POSTS if post['id'] == id), None)
-    if updated_post is None:
+    post = find_post_by_id(post_id)
+    if post is None:
         return '', 404
 
     new_post = request.get_json()
 
-    if 'title' not in new_post:
-        new_post['title'] = updated_post['title']
-    if 'content' not in new_post:
-        new_post['content'] = updated_post['content']
-    new_post['id'] = id
+    if 'title' in new_post:
+        post['title'] = new_post['title']
+    if 'content' in new_post:
+        post['content'] = new_post['content']
 
-    for i, post in enumerate(POSTS):
-        if post['id'] == id:
-            POSTS[i] = new_post
-            break
-
-    return jsonify(new_post), 200
+    return jsonify(post), 200
 
 
 if __name__ == '__main__':
