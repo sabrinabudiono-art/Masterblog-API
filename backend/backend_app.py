@@ -16,7 +16,33 @@ def find_post_by_id(post_id):
 
 @app.route('/api/posts', methods=['GET', 'POST'])
 def handle_posts():
-    if request.method == 'POST':
+    if request.method == 'GET':
+        sort_query = request.args.get('sort')
+        direction_query = request.args.get('direction')
+
+        if not sort_query and not direction_query:
+            return jsonify(POSTS), 200
+
+        if not sort_query or not direction_query:
+            return jsonify({"message": "Both 'sort' and 'direction' parameters are required"}), 400
+
+        allowed_sort = ["title", "content"]
+        allowed_directions = ["asc", "desc"]
+
+        if sort_query not in allowed_sort:
+            return jsonify({
+                "message": f"Invalid sort field '{sort_query}'. Allowed is: {allowed_sort}"
+            }), 400
+
+        if direction_query not in allowed_directions:
+            return jsonify({
+                "message": f"Invalid direction '{direction_query}'. Allowed values: {allowed_directions}"
+            }), 400
+
+        result = sorted(POSTS, key=lambda post: post[sort_query].lower(), reverse=True if direction_query == 'desc' else False)
+        return jsonify(result), 200
+
+    elif request.method == 'POST':
         # Add the code that handles adding a new blog
         new_post = request.get_json()
         if 'title' not in new_post:
