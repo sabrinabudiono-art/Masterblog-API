@@ -11,20 +11,23 @@ POSTS = [
 
 
 def find_post_by_id(post_id):
+    """
+        Find a post by its ID. If not found, return None
+    """
     return next((post for post in POSTS if post['id'] == post_id), None)
 
 
 @app.route('/api/posts', methods=['GET', 'POST'])
 def handle_posts():
+    """
+        Handle retrieving or creating blog posts.
+    """
     if request.method == 'GET':
         sort_query = request.args.get('sort')
         direction_query = request.args.get('direction')
 
         if not sort_query and not direction_query:
             return jsonify(POSTS), 200
-
-        if not sort_query or not direction_query:
-            return jsonify({"message": "Both 'sort' and 'direction' parameters are required"}), 400
 
         allowed_sort = ["title", "content"]
         allowed_directions = ["asc", "desc"]
@@ -39,7 +42,7 @@ def handle_posts():
                 "message": f"Invalid direction '{direction_query}'. Allowed values: {allowed_directions}"
             }), 400
 
-        result = sorted(POSTS, key=lambda post: post[sort_query].lower(), reverse=True if direction_query == 'desc' else False)
+        result = sorted(POSTS, key=lambda post: post[sort_query].lower(), reverse=(direction_query == 'desc'))
         return jsonify(result), 200
 
     elif request.method == 'POST':
@@ -62,16 +65,15 @@ def handle_posts():
         # Return the new post to the client
         return jsonify(new_post), 201
 
-    return jsonify(POSTS)
-
 
 @app.route('/api/posts/<int:post_id>', methods=['DELETE'])
 def delete(post_id):
-    global POSTS
-
+    """
+        Delete a post by its ID. If not found, return 404.
+    """
     post = find_post_by_id(post_id)
     if post is None:
-        return '', 404
+        return jsonify({"error": f"Post with id {post_id} not found"}), 404
     POSTS.remove(post)
 
     successfully_deleted = {"message": f"Post with id {post_id} has been deleted successfully."}
@@ -80,7 +82,9 @@ def delete(post_id):
 
 @app.route('/api/posts/<int:post_id>', methods=['PUT'])
 def update(post_id):
-    global POSTS
+    """
+        Update an existing post by its ID. If not found, return 404.
+    """
     post = find_post_by_id(post_id)
     if post is None:
         return '', 404
@@ -97,16 +101,31 @@ def update(post_id):
 
 @app.route('/api/posts/search', methods=['GET'])
 def search_post():
+    """
+        Search posts by title and/or content.
+    """
     title_query = request.args.get('title')
     content_query = request.args.get('content')
-    if title_query:
-        result = [post for post in POSTS if title_query.lower() in post['title'].lower()]
-        query_result = result
-    if content_query:
-        result = [post for post in POSTS if content_query.lower() in post['content'].lower()]
-        query_result = result
 
-    return jsonify(query_result), 200
+    if not title_query and not content_query:
+        return jsonify([]), 200
+
+    results = []
+
+    for post in POSTS:
+        title_match = False
+        content_match = False
+
+        if title_query:
+            title_match = title_query.lower() in post['title'].lower()
+
+        if content_query:
+            content_match = content_query.lower() in post['content'].lower()
+
+        if title_match or content_match:
+            results.append(post)
+
+    return jsonify(results), 200
 
 
 if __name__ == '__main__':
